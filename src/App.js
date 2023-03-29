@@ -2,28 +2,38 @@ import axios from 'axios';
 import { useAsync } from './hooks';
 import { Header } from './components';
 import { Spinner } from './components';
-
+import PostList from './components/domain/PostList';
+import PostProvider from './contexts/PostProvider';
+import { useCallback } from 'react';
+import PostAddForm from './components/domain/PostAddForm';
 
 const App = () => {
-  const initialPost = useAsync(async () => {
+  const initialPosts = useAsync(async () => {
     return await axios
     .get('https://jsonplaceholder.typicode.com/posts')
     .then(response => response.data);
   }, []);
 
+  const handleDeletePost = useCallback(async (id) => {
+    return await axios.delete(`https://jsonplaceholder.typicode.com/posts/${id}`).then(() => ({ id }));
+  }, []);
+
+  const handleAddPost = useCallback(async (post) => {
+    return await axios.post(`https://jsonplaceholder.typicode.com/posts`, post).then((response) => response.data);
+  }, []);
+
   return (
+    <PostProvider 
+      initialPosts={initialPosts.value}
+      handleDeletePost={handleDeletePost}
+      handleAddPost={handleAddPost}
+    >
     <div>
       <Header>Posts</Header>
-      <ul>
-        {initialPost.isLoading ? ( 
-          <Spinner />
-        ) : (
-          (initialPost.value || []).map((post) => (
-            <li key={post.id}>{post.title}</li>
-          ))
-        )}
-      </ul>
+      <PostAddForm></PostAddForm>
+        {initialPosts.isLoading ?  <Spinner /> : <PostList />}
     </div>
+    </PostProvider>
   );
 }
 
